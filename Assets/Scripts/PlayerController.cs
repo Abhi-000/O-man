@@ -11,7 +11,7 @@ public class PlayerController : MonoBehaviour
     public CharacterController cc;
     public PathCreator pathCreator;
     public float speed =5;
-    float distanceTravelled,xPos;
+    [HideInInspector]public float distanceTravelled,xPos;
     [HideInInspector]public bool startRunning,pause;
     [HideInInspector]public bool gameOver = false;
     Vector3 desiredPos,pos;
@@ -34,7 +34,7 @@ public class PlayerController : MonoBehaviour
             xPos = Input.mousePosition.x;
             pos = transform.position;
         }
-        if (Input.GetMouseButton(0) )
+        if (Input.GetMouseButton(0) && !pause)
         {
             float xPosDiff = (xPos - Input.mousePosition.x) / Screen.width;
             xPosDiff *= -15;

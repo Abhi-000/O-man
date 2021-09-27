@@ -7,11 +7,8 @@ public class PlayerManager : MonoBehaviour
     public GameObject blob;
     float Animation;
     Vector3 blobPos, playerPos;
-    bool moveBlob, popBlob;
-    /* private void Start()
-     {
-         blobPos = blob.transform.position;
-     }*/
+    bool moveBlob, popBlob,hitPlayer;
+    public int size= 0;
     private void OnTriggerEnter(Collider other)
     {
         Debug.Log(other.tag);
@@ -21,11 +18,10 @@ public class PlayerManager : MonoBehaviour
             blob.transform.GetComponent<BoxCollider>().enabled = false;
             blob.transform.localScale = new Vector3(1, 1, 1);
             other.transform.GetComponent<CapsuleCollider>().enabled = false;
-            if ((transform.localScale.x == 1 && other.GetComponent<Pipe>().size == 0) ||
-                (transform.localScale.x == 1.2f && other.GetComponent<Pipe>().size == 1) ||
-                (transform.localScale.x == 1.4f && other.GetComponent<Pipe>().size == 2))
+            if ((size ==0 && other.GetComponent<Pipe>().size == 0) ||
+                (size == 1 && other.GetComponent<Pipe>().size == 1) ||
+                (size == 2 && other.GetComponent<Pipe>().size == 2))
             {
-                Debug.Log("BLOB");
                 blob.SetActive(true);
                 blob.transform.parent = transform;
                 blob.transform.localPosition = new Vector3(0, 0, 2);
@@ -40,8 +36,9 @@ public class PlayerManager : MonoBehaviour
         }
         else if (other.CompareTag("Blob") && !popBlob)
         {
-            PlayerController.instance.pathCreator.transform.position += new Vector3(0, .8f, 0);
+            PlayerController.instance.pathCreator.transform.position += new Vector3(0, .5f, 0);
             transform.localScale += new Vector3(0.2f, 0.2f, 0);
+            size++;
             other.gameObject.SetActive(false);
         }
         else if (other.CompareTag("Obstacle"))
@@ -52,15 +49,22 @@ public class PlayerManager : MonoBehaviour
             blob.transform.GetComponent<BoxCollider>().enabled = false;
             blob.SetActive(true);
             blob.transform.parent = transform;
-            blob.transform.localScale = new Vector3(1, 1, 1);
-            blob.transform.localPosition = new Vector3(0, 0, 2);
+            blob.transform.localPosition = Vector3.zero;
             PlayerController.instance.pause = true;
-            PlayerController.instance.startRunning = false;
-            transform.position -= new Vector3(0, 0, 2.5f);
+            playerPos = transform.position;
+            transform.position -= new Vector3(0, 0, 8f);
             blobPos = blob.transform.position;
             moveBlob = true;
             popBlob = true;
+            if(size !=0)
+            transform.localScale -= new Vector3(0.2f, 0.2f, 0);
+            Invoke(nameof(afterDelayPlay), .3f);
         }
+    }
+    void afterDelayPlay()
+    {
+        PlayerController.instance.distanceTravelled -= 8f;
+        PlayerController.instance.pause = false;
     }
     void afterDelayBounce()
     {
@@ -79,15 +83,24 @@ public class PlayerManager : MonoBehaviour
             if (!popBlob)
                 blob.transform.position = MathParabola.Parabola(blobPos, blobPos + Vector3.forward * 15f, 5f, Animation / 1.5f);
             else
-                blob.transform.position = MathParabola.Parabola(blobPos, blobPos + Vector3.right * 2f, 5f, Animation / 1.5f);
+            {
+                blob.transform.localScale = new Vector3(0.5f, 0.5f, 0.3f);
+                blob.transform.position = MathParabola.Parabola(blobPos, blobPos + Vector3.right * 3f, 3f, Animation / 1.5f);
+            }
             if (Animation >= 1.4f)
             {
                 Debug.Log("Stop");
+                if(popBlob)
+                    blob.transform.position = new Vector3(blob.transform.position.x, transform.position.y-2.5f, blob.transform.position.z);
+                else blob.transform.position = new Vector3(blob.transform.position.x, transform.position.y, blob.transform.position.z);
                 moveBlob = false;
                 popBlob = false;
-                blob.transform.position = new Vector3(blob.transform.position.x, 8, blob.transform.position.z);
                 blob.transform.GetComponent<BoxCollider>().enabled = true;
             }
+        }
+        else if(hitPlayer)
+        {
+            transform.position = Vector3.Lerp(playerPos, playerPos - new Vector3(0, 0, 4), 2f * Time.deltaTime);
         }
 
     }
