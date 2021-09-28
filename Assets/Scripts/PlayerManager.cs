@@ -1,10 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerManager : MonoBehaviour
 {
-    public GameObject blob;
+    public GameObject blob,losePanel,winPanel;
+    GameObject blobOriginal;
     float Animation;
     Vector3 blobPos, playerPos;
     bool moveBlob, popBlob,hitPlayer;
@@ -14,24 +16,46 @@ public class PlayerManager : MonoBehaviour
         Debug.Log(other.tag);
         if (other.CompareTag("Cylinder"))
         {
+            Debug.Log(other.GetComponent<Pipe>().size);
             Animation = 0;
+            if (blobOriginal != null)
+                blob = blobOriginal;
             blob.transform.GetComponent<BoxCollider>().enabled = false;
-            blob.transform.localScale = new Vector3(1, 1, 1);
-            other.transform.GetComponent<CapsuleCollider>().enabled = false;
-            if ((size ==0 && other.GetComponent<Pipe>().size == 0) ||
-                (size == 1 && other.GetComponent<Pipe>().size == 1) ||
-                (size == 2 && other.GetComponent<Pipe>().size == 2))
+            blob.transform.localScale = new Vector3(transform.localScale.x, transform.localScale.x, transform.localScale.x);
+           /* if (size == 0)
+                blob.transform.localScale = new Vector3(1f, 1f, 1);
+            else if (size == 1)
+                blob.transform.localScale = new Vector3(1.2f,1.2f,1.2f);
+            if (size == 2)
+                blob.transform.localScale = new Vector3(1.6f, 1.6f, 1.6f);*/
+            if (other.transform.GetComponent<CapsuleCollider>() != null)
+            {
+                other.transform.GetComponent<CapsuleCollider>().enabled = false;
+            }
+            if (size==other.GetComponent<Pipe>().size && !PlayerController.instance.bonus)
             {
                 blob.SetActive(true);
                 blob.transform.parent = transform;
                 blob.transform.localPosition = new Vector3(0, 0, 2);
                 Invoke(nameof(afterDelayBounce), .8f);
             }
-            else
+            else if(size< other.GetComponent<Pipe>().size)
             {
-                PlayerController.instance.player.SetBool("fall", true);
-                transform.position = new Vector3(transform.position.x, other.transform.position.y + 1, transform.position.z);
-                PlayerController.instance.gameOver = true;
+                if (!PlayerController.instance.bonus)
+                {
+                    PlayerController.instance.player.SetBool("fall", true);
+                    transform.position = new Vector3(transform.position.x, other.transform.position.y + 1, transform.position.z);
+                    PlayerController.instance.gameOver = true;
+                    Invoke(nameof(lose),2.5f);
+                }
+                else
+                {
+                    PlayerController.instance.bonus = false;
+                    PlayerController.instance.startRunning = false;
+                    PlayerController.instance.player.SetBool("glide", false);
+                    PlayerController.instance.player.SetBool("run", false);
+                    Invoke(nameof(win), 1f);
+                }
             }
         }
         else if (other.CompareTag("Blob") && !popBlob)
@@ -45,6 +69,7 @@ public class PlayerManager : MonoBehaviour
         {
             other.GetComponent<BoxCollider>().enabled = false;
             Animation = 0;
+            blobOriginal = blob;
             blob = Instantiate(blob);
             blob.transform.GetComponent<BoxCollider>().enabled = false;
             blob.SetActive(true);
@@ -56,9 +81,26 @@ public class PlayerManager : MonoBehaviour
             blobPos = blob.transform.position;
             moveBlob = true;
             popBlob = true;
-            if(size !=0)
-            transform.localScale -= new Vector3(0.2f, 0.2f, 0);
+            if (size != 0)
+            {
+                size--;
+                transform.localScale -= new Vector3(0.2f, 0.2f, 0);
+                PlayerController.instance.pathCreator.transform.position -= new Vector3(0, .5f, 0); ;
+            }
+            else
+            {
+                Invoke(nameof(lose),1.5f);
+            }
             Invoke(nameof(afterDelayPlay), .3f);
+        }
+        else if(other.CompareTag("Bonus"))
+        {
+            transform.position = new Vector3(0, transform.position.y, transform.position.z);
+            PlayerController.instance.pathCreator.transform.position =
+                new Vector3(PlayerController.instance.pathCreator.transform.position.x, 8.65f, PlayerController.instance.pathCreator.transform.position.z);
+            PlayerController.instance.bonus = true;
+            PlayerController.instance.startRunning = true;
+            PlayerController.instance.player.SetBool("glide", true);
         }
     }
     void afterDelayPlay()
@@ -75,7 +117,6 @@ public class PlayerManager : MonoBehaviour
     {
         if (moveBlob)
         {
-            blob.transform.GetComponent<BoxCollider>().enabled = true;
             blob.transform.localScale = new Vector3(0.5f, 0.5f, 0.6f);
             Animation += Time.deltaTime;
             Animation = Animation % 1.5f;
@@ -89,8 +130,8 @@ public class PlayerManager : MonoBehaviour
             }
             if (Animation >= 1.4f)
             {
-                Debug.Log("Stop");
-                if(popBlob)
+                blob.transform.GetComponent<BoxCollider>().enabled = true;
+                if (popBlob)
                     blob.transform.position = new Vector3(blob.transform.position.x, transform.position.y-2.5f, blob.transform.position.z);
                 else blob.transform.position = new Vector3(blob.transform.position.x, transform.position.y, blob.transform.position.z);
                 moveBlob = false;
@@ -103,5 +144,17 @@ public class PlayerManager : MonoBehaviour
             transform.position = Vector3.Lerp(playerPos, playerPos - new Vector3(0, 0, 4), 2f * Time.deltaTime);
         }
 
+    }
+    void lose()
+    {
+        losePanel.SetActive(true);
+    }
+    void win()
+    {
+        winPanel.SetActive(true);
+    }
+    public void restartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

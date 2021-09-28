@@ -13,7 +13,7 @@ public class PlayerController : MonoBehaviour
     public float speed =5;
     [HideInInspector]public float distanceTravelled,xPos;
     [HideInInspector]public bool startRunning,pause;
-    [HideInInspector]public bool gameOver = false;
+    [HideInInspector] public bool gameOver = false, bonus = false;
     Vector3 desiredPos,pos;
     private void Awake()
     {
@@ -23,7 +23,7 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetMouseButtonUp(0))
+        if(Input.GetMouseButtonUp(0) && !bonus)
         {
             startRunning = false;
             player.SetBool("run", false);
@@ -34,11 +34,14 @@ public class PlayerController : MonoBehaviour
             xPos = Input.mousePosition.x;
             pos = transform.position;
         }
-        if (Input.GetMouseButton(0) && !pause)
+        if (Input.GetMouseButton(0) && !pause || bonus)
         {
-            float xPosDiff = (xPos - Input.mousePosition.x) / Screen.width;
-            xPosDiff *= -15;
-            desiredPos = pos + new Vector3(xPosDiff, 0, 0);
+            if (!bonus)
+            {
+                float xPosDiff = (xPos - Input.mousePosition.x) / Screen.width;
+                xPosDiff *= -15;
+                desiredPos = pos + new Vector3(xPosDiff, 0, 0);
+            }
             desiredPos.x = Mathf.Clamp(desiredPos.x, -4f, 4f);
             distanceTravelled += speed * Time.deltaTime;
             desiredPos.y =  pathCreator.path.GetPointAtDistance(distanceTravelled).y;
