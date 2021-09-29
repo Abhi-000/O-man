@@ -16,24 +16,25 @@ public class PlayerManager : MonoBehaviour
         Debug.Log(other.tag);
         if (other.CompareTag("Cylinder"))
         {
-            Debug.Log(other.GetComponent<Pipe>().size);
+            Quaternion currentRotation = transform.GetChild(0).rotation;
+            Quaternion wantedRotation = Quaternion.Euler(0, 0, 0);
+            transform.GetChild(0).rotation = wantedRotation;
+            PlayerController.instance.speed = 4f;
+            
+            if(!other.transform.parent.CompareTag("Bonus"))
+            Invoke(nameof(afterDelayStopGlide), 1.5f);
             Animation = 0;
             if (blobOriginal != null)
                 blob = blobOriginal;
             blob.transform.GetComponent<BoxCollider>().enabled = false;
             blob.transform.localScale = new Vector3(transform.localScale.x, transform.localScale.x, transform.localScale.x);
-           /* if (size == 0)
-                blob.transform.localScale = new Vector3(1f, 1f, 1);
-            else if (size == 1)
-                blob.transform.localScale = new Vector3(1.2f,1.2f,1.2f);
-            if (size == 2)
-                blob.transform.localScale = new Vector3(1.6f, 1.6f, 1.6f);*/
             if (other.transform.GetComponent<CapsuleCollider>() != null)
             {
                 other.transform.GetComponent<CapsuleCollider>().enabled = false;
             }
             if (size==other.GetComponent<Pipe>().size && !PlayerController.instance.bonus)
             {
+                PlayerController.instance.player.SetBool("glide", true);
                 blob.SetActive(true);
                 blob.transform.parent = transform;
                 blob.transform.localPosition = new Vector3(0, 0, 2);
@@ -44,7 +45,7 @@ public class PlayerManager : MonoBehaviour
                 if (!PlayerController.instance.bonus)
                 {
                     PlayerController.instance.player.SetBool("fall", true);
-                    transform.position = new Vector3(transform.position.x, other.transform.position.y + 1, transform.position.z);
+                    //transform.position = new Vector3(transform.position.x, other.transform.position.y + 1, transform.position.z);
                     PlayerController.instance.gameOver = true;
                     Invoke(nameof(lose),2.5f);
                 }
@@ -101,7 +102,14 @@ public class PlayerManager : MonoBehaviour
             PlayerController.instance.bonus = true;
             PlayerController.instance.startRunning = true;
             PlayerController.instance.player.SetBool("glide", true);
+            PlayerController.instance.player.SetBool("run", false);
         }
+    }
+    void afterDelayStopGlide()
+    {
+        PlayerController.instance.speed = 5f;
+        PlayerController.instance.player.SetBool("glide", false);
+        PlayerController.instance.player.SetBool("run", true);
     }
     void afterDelayPlay()
     {
